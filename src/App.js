@@ -15,12 +15,61 @@ function reducer(state, {type, payload}) {
   switch(type) {
     case ACTIONS.ADD_DIGIT:
         if (payload.digit === "0" && state.currentOp === "0") return state;
-        if (payload.digit === "." && state.currentOp === ".") return state;
+        if (payload.digit === "." && state.currentOp.includes(".")) return state;
         return {
           ...state,
           currentOp: `${state.currentOp || ""}${payload.digit}`
         }
+    case ACTIONS.CHOOSE_OPERATION:
+        if (state.currentOp == null && state.previousOp == null ) {
+          return state
+        }
+        if(state.currentOp == null) {
+          return {
+            ...state,
+            operation: payload.operation
+          }
+        }
+        if (state.previousOp == null) {
+          return {
+            ...state,
+            operation: payload.operation,
+            previousOp: state.currentOp,
+            currentOp: null
+          }
+        }
+        return {
+          ...state,
+          previousOp: evaluate(state),
+          operation: payload.operation,
+          currentOp: null
+        }
+    case ACTIONS.CLEAR:
+      return{}
   }
+}
+
+function evaluate({ currentOp, previousOp, operation}) {
+  const prev = parseFloat(previousOp)
+  const curr = parseFloat(currentOp)
+  if (isNaN(prev) || isNaN(curr)) return ""
+  let computation = ""
+  switch (operation) {
+    case "+":
+      computation = prev + curr
+      break
+    case "-":
+      computation = prev - curr
+      break
+    case "*":
+      computation = prev * curr
+      break
+    case "/":
+      computation = prev / curr
+      break
+    
+  }
+  return computation.toString()
 }
 
 function App() {
@@ -31,7 +80,7 @@ function App() {
         <div className="prev">{previousOp}  {operation}</div>
         <div className="curr">{currentOp}</div>
       </div>
-      <button className="span-two">AC</button>
+      <button className="span-two" onClick={() => dispatch({ type: ACTIONS.CLEAR })}>AC</button>
       <button>DEL</button>
       {/* <button>/</button> */}
       <OperationButton operation='/' dispatch={dispatch}/>
