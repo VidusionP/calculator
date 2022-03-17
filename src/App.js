@@ -13,9 +13,17 @@ export const ACTIONS = {
 
 function reducer(state, {type, payload}) {
   switch(type) {
+
     case ACTIONS.ADD_DIGIT:
-        if (payload.digit === "0" && state.currentOp === "0") return state;
-        if (payload.digit === "." && state.currentOp.includes(".")) return state;
+        if (state.overwrite) {
+          return {
+            ...state,
+            currentOp: payload.digit,
+            overwrite: false
+          }
+        }
+        if (payload.digit === "0" && state.currentOp === "0") {return state;}
+        if (payload.digit === "." && state.currentOp.includes(".")) {return state;}
         return {
           ...state,
           currentOp: `${state.currentOp || ""}${payload.digit}`
@@ -46,6 +54,38 @@ function reducer(state, {type, payload}) {
         }
     case ACTIONS.CLEAR:
       return{}
+    case ACTIONS.DELETE_DIGITAL:
+      if (state.overwrite) {
+        return {
+          ...state,
+          currentOp:null,
+          overwrite: false
+        }
+      }
+      if (state.currentOp == null) return state
+      if (state.currentOp.length === 1) {
+        return {
+          ...state,
+          currentOp: null
+        }
+        
+      }
+      return {
+        ...state,
+        currentOp: state.currentOp.slice(0,-1)
+      }
+    case ACTIONS.EVALUATE:
+      if (state.operation == null || state.currentOp == null || state.previousOp == null) {
+        return state
+      }
+
+      return {
+        ...state,
+        overwrite: true,
+        previousOp: null,
+        operation: null,
+        currentOp: evaluate(state)
+      }
   }
 }
 
@@ -81,7 +121,7 @@ function App() {
         <div className="curr">{currentOp}</div>
       </div>
       <button className="span-two" onClick={() => dispatch({ type: ACTIONS.CLEAR })}>AC</button>
-      <button>DEL</button>
+      <button onClick={() => dispatch({ type: ACTIONS.DELETE_DIGITAL })}>DEL</button>
       {/* <button>/</button> */}
       <OperationButton operation='/' dispatch={dispatch}/>
       <DigitalButton digit='1' dispatch={dispatch}/>
@@ -98,7 +138,7 @@ function App() {
       <OperationButton operation='-' dispatch={dispatch}/>
       <DigitalButton digit='.' dispatch={dispatch}/>
       <DigitalButton digit='0' dispatch={dispatch}/>
-      <button className="span-two">=</button>
+      <button className="span-two" onClick={() => dispatch({ type: ACTIONS.EVALUATE })}>=</button>
     </div>
   );
 }
